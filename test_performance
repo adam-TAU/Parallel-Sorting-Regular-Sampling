@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# compilation of the algorithms
+gcc -std=c11 -fopenmp -O3 -c assign/hyperquicksort_parallel.c -o quick.o -lm
+gcc -std=c11 -O3 -c assign/main.c -o main.o
+gcc -O3 -fopenmp main.o quick.o -o parsort -lm
+
+gcc -std=c11 -O3 sort.c -o sort
+
+
+# printing the outputs of the algorithms
+echo -n "Regular Algorithm: "
+./sort $1 $2 | head -n1
+
+echo  -n "Parallel Algorithm: "
+./parsort $1 $2 | head -n1
+
+
+# cleaning
+rm sort
+rm parsort
+rm quick.o
+rm main.o
