@@ -48,7 +48,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 		return;
 	}
 	
-	processors = MAX(processors, omp_get_max_threads());
+	processors = MIN(processors, omp_get_max_threads());
 
 
   int p, size, rsize, sample_size;
