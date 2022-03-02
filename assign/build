@@ -1,0 +1,11 @@
+
+#!/bin/bash
+
+# assembling and linking
+gcc -std=c11 -fopenmp -O3 -c hyperquicksort_parallel.c -o quick.o -lm
+gcc -std=c11 -O3 -c main.c -o main.o 
+gcc -O3 -fopenmp main.o quick.o -o parsort -lm
+
+# clean up
+rm quick.o
+rm main.o
