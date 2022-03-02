@@ -42,7 +42,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 		return;
 	}
 	
-
+	processors = max(processors, omp_get_max_threads());
 
 
   int p, size, rsize, sample_size;
