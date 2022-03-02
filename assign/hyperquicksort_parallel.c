@@ -58,12 +58,12 @@ void parl_hyperQuickSort(uint_64 *a, int p, int n) {
   rsize = (size + p - 1) / p;
   sample_size = p * (p - 1);
 
-  loc_a_ptrs = malloc(p * sizeof(uint_64 *));
-  sample = malloc(sample_size * sizeof(uint_64));
-  partition_borders = malloc(p * (p + 1) * sizeof(int));
-  bucket_sizes = malloc(p * sizeof(int));
-  result_positions = malloc(p * sizeof(int));
-  pivots = malloc((p - 1) * sizeof(uint_64));
+  loc_a_ptrs = (uint_64**) malloc(p * sizeof(uint_64 *));
+  sample = (uint_64*) malloc(sample_size * sizeof(uint_64));
+  partition_borders = (int*) malloc(p * (p + 1) * sizeof(int));
+  bucket_sizes = (int*) malloc(p * sizeof(int));
+  result_positions = (int*) malloc(p * sizeof(int));
+  pivots = (uint_64*) malloc((p - 1) * sizeof(uint_64));
 
   #pragma omp parallel
   {
@@ -77,7 +77,7 @@ void parl_hyperQuickSort(uint_64 *a, int p, int n) {
     loc_size = (end - start + 1);
     end = end % size;
 
-    loc_a = malloc(loc_size * sizeof(uint_64));
+    loc_a = (uint_64*) malloc(loc_size * sizeof(uint_64));
     memcpy(loc_a, a + start, loc_size * sizeof(uint_64));
     loc_a_ptrs[thread_num] = loc_a;
 
@@ -300,7 +300,7 @@ uint_64 *merge_sort(uint_64 * arr, int size){
 
 uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end){
 	int temp_off, l_off, r_off, size = l_end+r_end;
-	uint_64 *temp = malloc(sizeof(uint_64) * l_end);
+	uint_64 *temp = (uint_64*) malloc(sizeof(uint_64) * l_end);
 
 	// Copy lower half into temp buffer
 	for(l_off=0, temp_off=0; left+l_off != right; l_off++, temp_off++){
