@@ -7,6 +7,12 @@
 
 
 
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+
+
 /* headers */
 void calc_partition_borders(uint_64 array[],
                int start,
@@ -42,7 +48,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 		return;
 	}
 	
-	processors = max(processors, omp_get_max_threads());
+	processors = MAX(processors, omp_get_max_threads());
 
 
   int p, size, rsize, sample_size;
