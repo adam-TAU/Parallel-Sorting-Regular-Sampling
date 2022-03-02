@@ -8,7 +8,6 @@
 
 
 /* headers */
-void insertion_sort(uint_64 *arr, int n);
 void calc_partition_borders(uint_64 array[],
                int start,
                int end,
@@ -35,54 +34,70 @@ void swap(uint_64 *, uint_64 *);
 
 
 /* sort an array in non-descending order */
-void parl_hyperQuickSort(uint_64 *a, int p, int n) {
+void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 
-  int size, rsize, sample_size;
+	/* base cases - that a regular sort proved to be better */
+	if (processors <= 1 || n <= 1000) {
+		quickSort(a, 0, n - 1);
+		return;
+	}
+	
+
+
+
+  int p, size, rsize, sample_size;
   uint_64 *sample, *pivots;
   int *partition_borders, *bucket_sizes, *result_positions;
   uint_64 **loc_a_ptrs;
 
   // Determine the appropriate number of threads to use
   // p^3 <= n - We need this to hold true
+  p = processors;
   p = p*p*p;
   if(p > n){
 	p = floor(pow(n,0.33));
 	p-=p%2;
   }else{
-   p = omp_get_max_threads();
+   p = processors;
    p-=p%2;
   }
   omp_set_num_threads(p);
 
-  size  = (n + p - 1) / p;
-  rsize = (size + p - 1) / p;
-  sample_size = p * (p - 1);
+	/* control panel */
+  size  = (n + p - 1) / p; // calculate size of local arrays (must add  (p-1)  in order to round up things
+  rsize = (size + p - 1) / p; // 
+  sample_size = p * (p - 1); // the size of the sampling array ( (p-1) pivots from each thread. There are p threads)
 
-  loc_a_ptrs = (uint_64**) malloc(p * sizeof(uint_64 *));
-  sample = (uint_64*) malloc(sample_size * sizeof(uint_64));
+  loc_a_ptrs = (uint_64**) malloc(p * sizeof(uint_64 *)); // array of pointers to local arrays
+  sample = (uint_64*) malloc(sample_size * sizeof(uint_64)); // array of the gathered samples
   partition_borders = (int*) malloc(p * (p + 1) * sizeof(int));
   bucket_sizes = (int*) malloc(p * sizeof(int));
   result_positions = (int*) malloc(p * sizeof(int));
-  pivots = (uint_64*) malloc((p - 1) * sizeof(uint_64));
+  pivots = (uint_64*) malloc((p - 1) * sizeof(uint_64)); // the (p - 1) sorted pivots chosen from "sample"
 
   #pragma omp parallel
   {
     int i, j, max, thread_num, start, end, loc_size, offset, this_result_size;
     uint_64 *loc_a, *this_result, *current_a;
 
+	/* fetch local size, start, and end */
     thread_num = omp_get_thread_num();
-    start = thread_num * size;
-    end = start + size - 1;
-    if(end >= n) end = n - 1;
-    loc_size = (end - start + 1);
-    end = end % size;
+    start = thread_num * size; // traditional start
+    end = start + size - 1; // traditional end 
+    if(end >= n) end = n - 1; // if (start + size) > n: this is the last thread. Move end to the end of the origin array
+    loc_size = (end - start + 1); // calculate the local size of the array we're working on, through end and start (since "size" isn't accurate at last thread
+    end = end % size; // relative end location (rather than origin end location) of the local array
 
+	/* create a local array, and memcpy into it from the origin array, from an offset of "start", and size "loc_size" */
     loc_a = (uint_64*) malloc(loc_size * sizeof(uint_64));
     memcpy(loc_a, a + start, loc_size * sizeof(uint_64));
     loc_a_ptrs[thread_num] = loc_a;
 
-    sortll(loc_a, loc_size); // Testing shows that this sequential sort is quickest in this instance
+	/* sort the local array */
+    sortll(loc_a, loc_size);
 	
+	
+	/* populating the sample array, with p * (p - 1) samples. Populate by the threads_num */
     offset = thread_num * (p - 1) - 1;
 
     for(i = 1; i < p; i++) {
@@ -95,6 +110,8 @@ void parl_hyperQuickSort(uint_64 *a, int p, int n) {
 
     #pragma omp barrier
 
+
+	/* sort the sample array, and choose (p - 1) pivots from it, and populate it into the "pivots" array */
     #pragma omp single
     {
       merge_sort(sample, sample_size); // Testing shows that this sequential sort is quickest in this instance
@@ -104,7 +121,7 @@ void parl_hyperQuickSort(uint_64 *a, int p, int n) {
     }
 
     #pragma omp barrier
-
+	
     offset = thread_num * (p + 1);
     partition_borders[offset] = 0;
     partition_borders[offset + p] = end + 1;
