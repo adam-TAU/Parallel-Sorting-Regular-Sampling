@@ -13,7 +13,6 @@ uint_64 *nums;
 static void parse_args(FILE*, int*);
 static void printarr(uint_64 *, int);
 static void free_program();
-void assert_other(int, char[]);
 /******************************/
 
 
@@ -61,7 +60,6 @@ static void parse_args(FILE* ifp, int* length) {
 	/* initialize the array of nums first */
 	while (EOF != fscanf(ifp, "%lu", &num)) {
 		(*length)++;
-		if (EOF == fscanf(ifp, "\n")) break;
 	}
 
 	assert_other((*length) == 0, "Empty input file");
@@ -71,7 +69,6 @@ static void parse_args(FILE* ifp, int* length) {
 	rewind(ifp);
 	while(EOF != fscanf(ifp, "%lu", &num)) {
 		nums[ind++] = num;
-		if (EOF == fscanf(ifp, "\n")) break;
 	}
 
 
@@ -85,10 +82,9 @@ static void parse_args(FILE* ifp, int* length) {
 /* print an array of uint_64 integers separated by new lines */
 static void printarr(uint_64 numbers[], int length) {
 	int i;
-	for (i=0; i < length - 1; i++) {
+	for (i=0; i < length; i++) {
 		printf("%lu\n", numbers[i]);
 	}
-	printf("%lu", numbers[i]);
 }
 
 

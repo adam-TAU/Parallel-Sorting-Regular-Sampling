@@ -8,34 +8,7 @@
 
 
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
-
-
-/* headers */
-void calc_partition_borders(uint_64 array[],
-               int start,
-               int end,
-               int sublist_sizes[],
-               int at,
-               uint_64 pivots[],
-               int first_p,
-               int last_p);
-void sortll(uint_64 *a, int len);
-uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end);
-uint_64 *merge_sort(uint_64 * arr, int size);
-
-/* auxiliary funcs declaration */
-void quickSort(uint_64*, int, int);
-int partition(uint_64*, int, int);
-void swap(uint_64 *, uint_64 *);
-
-
-
-
-
-/***************** MAIN MECHANISM **********************/
+/***************** MAIN MECHANISM (INTERFACE FOR PSRS (Parallel Sorting Regular Sampling)) **********************/
 
 
 
@@ -48,7 +21,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 		return;
 	}
 	
-	processors = MIN(processors, omp_get_max_threads());
+	processors = MIN(processors, omp_get_max_threads()); // making sure we don't overload our threads with too many partitionings, that will make the CPUs inefficient
 
 
   int p, size, rsize, sample_size;
@@ -71,14 +44,14 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 
 	/* control panel */
   size  = (n + p - 1) / p; // calculate size of local arrays (must add  (p-1)  in order to round up things
-  rsize = (size + p - 1) / p; // 
+  rsize = (size + p - 1) / p; // in a local array, the distance between each sample
   sample_size = p * (p - 1); // the size of the sampling array ( (p-1) pivots from each thread. There are p threads)
 
   loc_a_ptrs = (uint_64**) malloc(p * sizeof(uint_64 *)); // array of pointers to local arrays
   sample = (uint_64*) malloc(sample_size * sizeof(uint_64)); // array of the gathered samples
-  partition_borders = (int*) malloc(p * (p + 1) * sizeof(int));
+  partition_borders = (int*) malloc(p * (p + 1) * sizeof(int)); // for (p-1) pivots, there will be (p+1) borders for each local array, making p * (p+1) borders in total
   bucket_sizes = (int*) malloc(p * sizeof(int));
-  result_positions = (int*) malloc(p * sizeof(int));
+  result_positions = (int*) malloc(p * sizeof(int)); // offsets, within the origin array a, that tell where each "cummulative partition" starts at. That helps when extracting the i-th partition of each thread's local array into one big array
   pivots = (uint_64*) malloc((p - 1) * sizeof(uint_64)); // the (p - 1) sorted pivots chosen from "sample"
 
   #pragma omp parallel
@@ -87,61 +60,62 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
     uint_64 *loc_a, *this_result, *current_a;
 
 	/* fetch local size, start, and end */
-    thread_num = omp_get_thread_num();
+    thread_num = omp_get_thread_num(); // rank of thread
     start = thread_num * size; // traditional start
     end = start + size - 1; // traditional end 
-    if(end >= n) end = n - 1; // if (start + size) > n: this is the last thread. Move end to the end of the origin array
+    end = (end >= n) ? (n - 1) : end; // if (start + size) > n: this is the last thread. Move end to the end of the origin array
     loc_size = (end - start + 1); // calculate the local size of the array we're working on, through end and start (since "size" isn't accurate at last thread
     end = end % size; // relative end location (rather than origin end location) of the local array
+
+
 
 	/* create a local array, and memcpy into it from the origin array, from an offset of "start", and size "loc_size" */
     loc_a = (uint_64*) malloc(loc_size * sizeof(uint_64));
     memcpy(loc_a, a + start, loc_size * sizeof(uint_64));
-    loc_a_ptrs[thread_num] = loc_a;
+    loc_a_ptrs[thread_num] = loc_a; // saving a pointer to the thread's local array in the shared "pointers-array"
 
 	/* sort the local array */
-    sortll(loc_a, loc_size);
+	quickSort(loc_a, 0, loc_size - 1);
 	
 	
 	/* populating the sample array, with p * (p - 1) samples. Populate by the threads_num */
-    offset = thread_num * (p - 1) - 1;
-
-    for(i = 1; i < p; i++) {
-      if(i * rsize <= end) {
-        sample[offset + i] = loc_a[i * rsize - 1];
-      } else {
-        sample[offset + i] = loc_a[end];
-      }
-    }
-
+	Extract_Samples(sample, loc_a, thread_num, end, rsize, p);
     #pragma omp barrier
 
 
 	/* sort the sample array, and choose (p - 1) pivots from it, and populate it into the "pivots" array */
     #pragma omp single
     {
-      merge_sort(sample, sample_size); // Testing shows that this sequential sort is quickest in this instance
+      merge_sort(sample, sample_size); /* the sorting algorithm of the sample array */
       for(i = 0; i < p - 1; i++) {
-        pivots[i] = sample[i * p + p / 2];
+        pivots[i] = sample[i * p + p / 2]; // the amount of processors, on average, is going to exclude p/2 numbers into the last thread's local array. Therefore, we'll have on average p/2 zeros at the start of the array. 0 is bad pivot.
       }
     }
-
-    #pragma omp barrier
+    // there's already an implied barrier here (thanks OpenMP)
 	
+	
+	
+	/* calculate the borders of each partition of the thread's local array, and inject them into the "partition_borders" shared array */
+    // enter the obvious borders = the start and the end
     offset = thread_num * (p + 1);
     partition_borders[offset] = 0;
     partition_borders[offset + p] = end + 1;
+    // calculate the "inner" borders of the thread's local array
     calc_partition_borders(loc_a, 0, loc_size-1, partition_borders, offset, pivots, 1, p-1);
-
     #pragma omp barrier
 
+
+
+	/* calculate how long each "cummulative partition" is going to be */
     max = p * (p + 1);
-    bucket_sizes[thread_num] = 0;
-    for(i = thread_num; i < max; i += p + 1) {
-      bucket_sizes[thread_num] += partition_borders[i + 1] - partition_borders[i];
+    bucket_sizes[thread_num] = 0; // initialize current "cummulative partition" to be 0
+    for(i = thread_num; i < max; i += p + 1) { // every <thread_num>-s partition of some local array of a thread, is going to be owned by this "cummulative partition"
+      bucket_sizes[thread_num] += partition_borders[i + 1] - partition_borders[i]; // calculate the local partition size and sum it up
     }
-
     #pragma omp barrier
+
+
+
 
     #pragma omp single
     {
@@ -150,39 +124,45 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
         result_positions[i] = bucket_sizes[i-1] + result_positions[i-1];
       }
     }
+	// there's already an implied barrier here (thanks OpenMP)	
+	
+	
+	
 
-    #pragma omp barrier
+	/* calculate the length of this "cummulative partition" */
+	this_result_size = (thread_num == (p-1)) ? (n - result_positions[thread_num]) : (result_positions[thread_num+1] - result_positions[thread_num]);    
+    
 
-    this_result = a + result_positions[thread_num];
 
-    if(thread_num == p-1) {
-      this_result_size = n - result_positions[thread_num];
-    } else {
-      this_result_size = result_positions[thread_num+1] - result_positions[thread_num];
-    }
-
-    // pluck this threads sublist from each of the local arrays
+    /* Extract the partitions in each thread, that are supposed to be handled by this thread (so all of the <thread_num> partitions, of all threads, shall be merged into one, here */
     this_result = a + result_positions[thread_num];
 
     for(i = 0, j = 0; i < p; i++) {
       int low, high, partition_size;
-      offset = i * (p + 1) + thread_num;
+      
+      // get the i-th thread's, <thread_num> partition borders. While the 0-th partition is starts at index 0.
+      offset = i * (p + 1) + thread_num; 
       low = partition_borders[offset];
       high = partition_borders[offset+1];
       partition_size = (high - low);
+      
+      // copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
       if(partition_size > 0) {
         memcpy(this_result+j, &(loc_a_ptrs[i][low]), partition_size * sizeof(uint_64));
         j += partition_size;
       }
     }
 
-    // sort p local sorted arrays
-    sortll(this_result, this_result_size); // Testing shows that this sequential sort is quickest in this instance
+
+    // sort the local array inplace, at its new placement (the origin array)
+    quickSort(this_result, 0, this_result_size - 1);
+	#pragma omp barrier
 	
-    #pragma omp barrier
-    free(loc_a);
+    
+    free(loc_a); // free local array
   }
 
+	/* free program */
   free(loc_a_ptrs);
   free(sample);
   free(partition_borders);
@@ -193,37 +173,35 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 }
 
 
-/* determine the boundaries for the sublists of an local array */
+/* calculate the borders of a local array, with a given array of pivots, the start and the end of the portion of the array
+ * that you want to determine its borders, the "ranks" of the pivots you wish to determine lower borders for
+ * Done in a recursive manner. Recursion depth is O(log(end - start)), and each iteration costs O(log(end - start)) */
 void calc_partition_borders(uint_64 array[],    // array being sorted
-                            int start,
+                            int start,			
                             int end,              // separate the array into current process range
-                            int result[],
-                            int at,               // this process start point in result
+                            int result[],			// the partition_borders array
+                            int at,               // this thread's local array's start at the partition_borders array
                             uint_64 pivots[],   // the pivot values
-                            int first_pv,         // first pivot
+                            int first_pv,         // first 
                             int last_pv)          // last pivot
 {
-  int mid, lowerbound, upperbound, center;
+  int mid, lowerbound;
   uint_64 pv;
 
-  mid = (first_pv + last_pv) / 2;
-  pv = pivots[mid-1];
-  lowerbound = start;
-  upperbound = end;
-  while(lowerbound <= upperbound) {
-    center = (lowerbound + upperbound) / 2;
-    if(array[center] > pv) {
-      upperbound = center - 1;
-    } else {
-      lowerbound = center + 1;
-    }
-  }
-  result[at + mid] = lowerbound;
+  mid = (first_pv + last_pv) / 2; // get the middle pivot rating between [1, ... , (p-1)]
+  pv = pivots[mid-1]; // get the value of the pivot
+  
+  /* binary search for the first value in the array that is greater than the pivot */
+	lowerbound = BinarySearch(array, pv, start, end);
+  
+  // enter the index of the first value in the local array that is greater than the pivot, as the border of the pivot, from its left (lowerbound) */
+  result[at + mid] = lowerbound; 
 
-  if(first_pv < mid) {
+	/* recursion */
+  if(first_pv < mid) { // search for borders implied by pivots who are *lower* than the current pivots[mid]. Since they're lower, we can reduce the end to the (lowerbound - 1)
     calc_partition_borders(array, start, lowerbound - 1, result, at, pivots, first_pv, mid - 1);
   }
-  if(mid < last_pv) {
+  if(mid < last_pv) { // search for borders implied by pivots who are *bigger* than the current pivots[mid]. Since they're bigger, we can reduce the start to (lowerbound)
     calc_partition_borders(array, lowerbound, end, result, at, pivots, mid + 1, last_pv);
   }
 }
@@ -231,23 +209,53 @@ void calc_partition_borders(uint_64 array[],    // array being sorted
 
 
 
-/*
-  Sort a portion of an array
-*/
-void sortll(uint_64 *a, int len)
-{
-	quickSort(a, 0, len);
-  // qsort(a, len, sizeof(uint_64), lcompare);
+
+
+/* this function returns the first value in the array that is greater than the pivot */
+int BinarySearch(uint_64* array, uint_64 pivot, int left, int right) {
+
+	int center;
+  
+  while(left <= right) {
+    center = (left + right) / 2;
+    if(array[center] > pivot) {
+      right = center - 1;
+    } else {
+      left = center + 1;
+    }
+  }
+  
+  return left;
 }
 
 
+
+/* This function extracts at a maximum, <parts> samples from the array_send, into the array_recv. Each sample must reside at least <sample_dist> indices away */
+void Extract_Samples(uint_64* array_recv, uint_64* array_send, int thread_num, int end, int sample_dist, int parts) {
+
+    int offset = thread_num * (parts - 1) - 1; // where the thread will write its samples (into the collective sampling array)
+    
+    for(int i = 1; i < parts; i++) { // parts, 2 * parts, ..., (parts-1) * parts
+      if(i * sample_dist <= end) {
+        array_recv[offset + i] = array_send[i * sample_dist - 1]; // i * p sample
+      } else {
+        array_recv[offset + i] = array_send[end]; // if the local array was the last thread's, hence a shortended array, there aren't enough samples ( < (p-1) )
+      }
+    }
+}
+
 /******************************************************************/
+
+
+
+
+
 
 
 /*********************** INTERFACE for QUICKSORT ******************/
 
 
-/* sorting the given file using multi-core parallelism */
+/* quick-sort regular algorithm */
 void quickSort(uint_64* arr, int low, int high)
 {
 
@@ -304,9 +312,16 @@ void swap(uint_64 *xp, uint_64 *yp)
 
 
 
-/*
-  Standard merge sort
-*/
+
+
+
+
+
+
+
+/*********************** INTERFACE for MERGESORT ******************/
+
+/* merge-sort regular algorithm */
 uint_64 *merge_sort(uint_64 * arr, int size){
 	// Arrays shorter than 1 are already sorted
 	if(size > 1){
@@ -321,6 +336,7 @@ uint_64 *merge_sort(uint_64 * arr, int size){
 	}else { return arr; }
 }
 
+/* merging two sorted lists */
 uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end){
 	int temp_off, l_off, r_off, size = l_end+r_end;
 	uint_64 *temp = (uint_64*) malloc(sizeof(uint_64) * l_end);
@@ -359,3 +375,7 @@ uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end){
 	free(temp);
 	return left;
 }
+
+
+
+/******************************************************/
