@@ -10,14 +10,33 @@ typedef unsigned long uint_64;
 
 
 
-/* Main Mechanism's function declarations */
+/* MAIN MECHANISM'S FUNCTIONS */
 void parl_hyperQuickSort(uint_64*, int, int);
-void Extract_Partition_Borders(uint_64 array[],
+
+
+void Parallel_Region (uint_64* original_array,
+					  int original_array_size,
+				      int part_size, 
+					  int local_sample_distance, 
+					  int samples_amount, 
+					  uint_64** local_parts_array, 
+					  uint_64* samples, 
+					  int* partition_borders, 
+					  int* cummulative_partition_sizes, 
+					  int* cummulative_partition_locations, 
+					  uint_64* pivots,
+					  int processors);
+				
+				
+					  
+					  
+/* MAIN MECHANISM'S AUXILIARY FUNCTIONS */				  
+void Extract_Partition_Borders(uint_64* local_part_array,
                             int start,			
                             int end, 
-                            int partition_borders[],
+                            int* partition_borders,
                             int offset_in_arr, 
-                            uint_64 pivots[],
+                            uint_64* pivots,
                             int first_pivot,
                             int last_pivot);
                
@@ -69,6 +88,9 @@ void Partition_Length(int* length,
 
 
 void Calc_Locations(int* partitions_locations, int* cummulative_partition_sizes, int parts);
+
+
+void Calc_Processors_Amount(int* processors, int array_size);
 
 
 /* declarations of quicksort's (auxiliary) funcs */
