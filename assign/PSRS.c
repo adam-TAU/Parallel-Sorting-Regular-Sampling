@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "PSRS.h"
+#include "hyperquicksort_parallel.h"
 
 
 

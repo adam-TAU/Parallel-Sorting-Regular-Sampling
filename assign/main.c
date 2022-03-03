@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "hyperquicksort_parallel.h"
+#include "PSRS.h"
 
 
 /* global variable declarations */
@@ -38,7 +38,7 @@ int main(int argv, char* args[]) {
 	double elapsed = (end.tv_sec - start.tv_sec)*1000000.0 + (end.tv_usec - start.tv_usec);
 
 	/* print to stdout */
-	printf("Hyper-QuickSort: %.lf\n", elapsed);
+	printf("PSRS (Parallel Sorting Regular Sampling): %.lf\n", elapsed);
       	printarr(nums, len);
 
 
