@@ -1,5 +1,5 @@
-#ifndef QUICKSORT_PARALLEL_H
-#define QUICKSORT_PARALLEL_H
+#ifndef PSRS_H
+#define PSRS_H
 
 
 
