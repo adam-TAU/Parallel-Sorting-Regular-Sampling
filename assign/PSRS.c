@@ -102,7 +102,7 @@ void Parallel_Region (uint_64* original_array,
 
 {	
 	/* Parallel Region - spawned with <processors> threads */
-#pragma omp parallel
+	#pragma omp parallel
 	{
 		int thread_num, start, end, local_part_size, offset, cummulative_partition_size;
 		uint_64 *local_part, *cummulative_partition;
@@ -113,10 +113,10 @@ void Parallel_Region (uint_64* original_array,
 		/* populating the samples array, with p * (p - 1) samples. Populate by the threads_num */
 		end = end % part_size; // relative end location (rather than origin end location) of the local array
 		Extract_Samples(samples, local_part, thread_num, end, local_sample_distance, processors);
-#pragma omp barrier
+		#pragma omp barrier
 
 		/* sort the sample array, and choose (p - 1) pivots from it, and populate it into the "pivots" array */
-#pragma omp single
+		#pragma omp single
 		Sort_Samples(samples, samples_amount, pivots, processors); // sort the gathered samples and derive <processors - 1> pivots from it
 		// implied Barrier (OpenMP)
 
@@ -129,16 +129,16 @@ void Parallel_Region (uint_64* original_array,
 		partition_borders[offset + processors] = end + 1;
 		// calculate the borders of the thread's local part array
 		Extract_Partition_Borders(local_part, 0, local_part_size-1, partition_borders, offset, pivots, 1, processors-1);
-#pragma omp barrier
+		#pragma omp barrier
 
 
 		/* calculate how long each "cummulative partition" is going to be */
 		Partition_Length(&cummulative_partition_sizes[thread_num], thread_num, partition_borders, processors * (processors + 1), processors);
-#pragma omp barrier
+		#pragma omp barrier
 
 
 		/* calculate the relative position of this thread's "cummulative partition", in regards to the start of the origin array 'a' */
-#pragma omp single
+		#pragma omp single
 		Calc_Locations(cummulative_partition_locations, cummulative_partition_sizes, processors);
 		// implied Barrier (OpenMP)
 
@@ -151,7 +151,7 @@ void Parallel_Region (uint_64* original_array,
 
 		/* Sort the accumulated partition, and free the memory that this thread allocated */
 		quickSort(cummulative_partition, 0, cummulative_partition_size - 1);
-#pragma omp barrier
+		#pragma omp barrier
 		free(local_part); // free local array
 	}
 }
