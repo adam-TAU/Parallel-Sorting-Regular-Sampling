@@ -1,5 +1,5 @@
 
-/**************************** DEAR SOURCE READER! THE DOCUMENTATION OF THE FUNCTIONS IS IN THE hyperquicksort_parallel.h HEADER FILE!!!!! ********************************/
+/**************************** DEAR SOURCE READER! THE DOCUMENTATION OF THE FUNCTIONS IS IN THE PSRS.h HEADER FILE!!!!! ********************************/
 
 
 
@@ -9,7 +9,7 @@
  * Tel Aviv University
  * PSRS - Parallel Sorting Regular Sampling Algorithm
  =====================================================
- * dear source reader, the documentation of the functions is in the hyperquicksort_parallel.h header file. 
+ * dear source reader, the documentation of the functions is in the PSRS.h header file. 
 */ 
 
 
