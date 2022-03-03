@@ -1,0 +1,38 @@
+#!/bin/python3
+
+
+
+'''
+COMMAND LINE PARAMETERS:
+- first parameter is the amount of chunks (500 uint64 numbes) you wish to generate
+- second parameter is the filename you wish to write your random numbers into
+
+'''
+
+
+
+
+
+
+
+import numpy
+
+
+def start(chunks: float, filename: str):
+	numpy.random.seed(0)
+	arr = numpy.random.randint(2**64, size=int(128 * chunks), dtype=numpy.uint64)
+	numpy.savetxt(filename, arr, "%lu")	
+			
+
+
+
+if __name__ == "__main__":
+	import sys
+	
+	if len(sys.argv) != 3:
+		print("must supply as the first parameter: KB amount\nAnd as your second parameter, the filename.")
+		sys.exit()
+		
+	start(float(sys.argv[1]), sys.argv[2])
+	kb = float(sys.argv[1])
+	print(f"generated {int(kb * 128)} = {int(kb)}KB random numbers into: '{sys.argv[2]}'")
