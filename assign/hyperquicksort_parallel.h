@@ -12,17 +12,63 @@ typedef unsigned long uint_64;
 
 /* Main Mechanism's function declarations */
 void parl_hyperQuickSort(uint_64*, int, int);
-void calc_partition_borders(uint_64 array[],
-               int start,
-               int end,
-               int sublist_sizes[],
-               int at,
-               uint_64 pivots[],
-               int first_p,
-               int last_p);
-void Extract_Samples(uint_64* array_recv, uint_64* array_send, int thread_num, int end, int sample_dist, int parts);
+void Extract_Partition_Borders(uint_64 array[],
+                            int start,			
+                            int end, 
+                            int partition_borders[],
+                            int offset_in_arr, 
+                            uint_64 pivots[],
+                            int first_pivot,
+                            int last_pivot);
+               
+void Extract_Samples(uint_64* array_recv,
+					 uint_64* array_send,
+					 int thread_num,
+					 int end,
+					 int sample_dist,
+					 int parts);
 
 
+void get_specs(int* start,
+			   int* end,
+			   int* size,
+			   int* thread_num, 
+			   int part_size,
+			   int origin_length);
+
+
+void Extract_Part(uint_64** local_part,
+				  uint_64* original_arr, 
+				  int start_copy,
+				  int size_copy, 
+				  uint_64** local_parts_array, 
+				  int thread_num);
+
+
+
+void Sort_Samples(uint_64* samples, int sample_size, uint_64* pivots, int parts);
+
+
+
+void Accumulate_Partitions(uint_64** cummulative_partition,
+						   uint_64* original_array, 
+						   int thread_num,
+						   int* partition_borders,
+						   int start_copy,
+						   uint_64** local_parts_array,
+						   int parts);
+						   
+						   
+void Partition_Length(int* length, 
+					  int thread_num,
+					  int* partition_borders,
+					  int all_partition_borders,
+					  int parts);
+
+
+
+
+void Calc_Locations(int* partitions_locations, int* cummulative_partition_sizes, int parts);
 
 
 /* declarations of quicksort's (auxiliary) funcs */
