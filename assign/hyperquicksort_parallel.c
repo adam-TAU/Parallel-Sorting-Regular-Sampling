@@ -54,6 +54,9 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
   result_positions = (int*) malloc(p * sizeof(int)); // offsets, within the origin array a, that tell where each "cummulative partition" starts at. That helps when extracting the i-th partition of each thread's local array into one big array
   pivots = (uint_64*) malloc((p - 1) * sizeof(uint_64)); // the (p - 1) sorted pivots chosen from "sample"
 
+
+
+	/* Parallel Region - spawned with p threads */
   #pragma omp parallel
   {
     int i, j, max, thread_num, start, end, loc_size, offset, this_result_size;
@@ -86,7 +89,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 	/* sort the sample array, and choose (p - 1) pivots from it, and populate it into the "pivots" array */
     #pragma omp single
     {
-      merge_sort(sample, sample_size); /* the sorting algorithm of the sample array */
+      mergeSort(sample, 0, sample_size - 1); /* the sorting algorithm of the sample array */
       for(i = 0; i < p - 1; i++) {
         pivots[i] = sample[i * p + p / 2]; // the amount of processors, on average, is going to exclude p/2 numbers into the last thread's local array. Therefore, we'll have on average p/2 zeros at the start of the array. 0 is bad pivot.
       }
@@ -116,7 +119,7 @@ void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
 
 
 
-
+	/* calculate the relative position of this thread's "cummulative partition", in regards to the start of the origin array a */
     #pragma omp single
     {
       result_positions[0] = 0;
@@ -321,61 +324,87 @@ void swap(uint_64 *xp, uint_64 *yp)
 
 /*********************** INTERFACE for MERGESORT ******************/
 
-/* merge-sort regular algorithm */
-uint_64 *merge_sort(uint_64 * arr, int size){
-	// Arrays shorter than 1 are already sorted
-	if(size > 1){
-		int middle = size / 2, i; 
-		uint_64 *left, *right;
-		left = arr;
-		right = arr + middle; 
+
+/* l is for left index and r is right index of the
+sub-array of array to be sorted */
+void mergeSort(uint_64* array, int left, int right)
+{
+    if (left < right) {
+        // Same as (l+r)/2, but avoids overflow for
+        // large l and h
+        int middle = left + (right - left) / 2;
+  
+        // Sort first and second halves
+	    mergeSort(array, left, middle);
+	    mergeSort(array, middle + 1, right);
 		
-		left = merge_sort(left, middle);
-		right = merge_sort(right, size-middle);
-		return merge(left, right, middle,size-middle);
-	}else { return arr; }
-}
-
-/* merging two sorted lists */
-uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end){
-	int temp_off, l_off, r_off, size = l_end+r_end;
-	uint_64 *temp = (uint_64*) malloc(sizeof(uint_64) * l_end);
-
-	// Copy lower half into temp buffer
-	for(l_off=0, temp_off=0; left+l_off != right; l_off++, temp_off++){
-		*(temp + temp_off) = *(left + l_off);
-	}
-	
-	temp_off=0; l_off=0; r_off=0;
-
-	while(l_off < size){
-		if(temp_off < l_end){
-			if(r_off < r_end){
-				if(*(temp+temp_off) < *(right+r_off)){
-					*(left+l_off) = *(temp+temp_off);
-					temp_off++;
-				}else{
-					*(left+l_off) = *(right+r_off);
-					r_off++;
-				}
-			}else{
-				*(left+l_off) = *(temp+temp_off);
-				temp_off++;
-			}
-		}else{
-			if(r_off < r_end) {
-				*(left + l_off) = *(right + r_off);
-				r_off++;
-			}else{
-				printf("\nERROR - merging loop going too far\n");
-			}
-		}
-		l_off++;
-	}
-	free(temp);
-	return left;
+		// printf("here1\n");
+		merge(array, left, middle, right);
+    }
 }
 
 
 
+
+/* sorting the given file using multi-core parallelism */
+// Merges two subarrays of array[].
+// First subarray is array[left..middle]
+// Second subarray is array[middle+1..right]
+void merge(uint_64* array, int left, int middle, int right)
+{
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+  
+    /* create temp arrays */
+    uint_64 *L = (uint_64*)calloc(n1, sizeof(uint_64*));
+    uint_64 *R = (uint_64*)calloc(n2, sizeof(uint_64*));
+
+	/* making sure memory was allocated adequately */
+  	if (L == NULL || R == NULL) {
+  		assert_other(1, "Incorrect allocation of memory");
+  	}
+  
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++)
+        L[i] = array[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = array[middle + 1 + j];
+  
+    /* Merge the temp arrays back into array[left..right]*/
+    i = 0; // Initial index of first subarray
+    j = 0; // Initial index of second subarray
+    k = left; // Initial index of merged subarray
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            array[k] = L[i];
+            i++;
+        }
+        else {
+            array[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+  
+    /* Copy the remaining elements of L[], if there
+    are any */
+    while (i < n1) {
+        array[k] = L[i];
+        i++;
+        k++;
+    }
+  
+    /* Copy the remaining elements of R[], if there
+    are any */
+    while (j < n2) {
+        array[k] = R[j];
+        j++;
+        k++;
+    }
+    
+    /* freeing memory */
+    free(L);
+    free(R);
+}
 /******************************************************/

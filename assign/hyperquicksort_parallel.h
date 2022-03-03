@@ -35,8 +35,8 @@ void swap(uint_64 *, uint_64 *);
 
 
 /* declarations of mergesort's (auxiliary) funcs */
-uint_64 *merge(uint_64 * left, uint_64 * right, int l_end, int r_end);
-uint_64 *merge_sort(uint_64 * arr, int size);
+void mergeSort(uint_64*, int, int);
+void merge(uint_64*, int, int, int);
 
 
 
