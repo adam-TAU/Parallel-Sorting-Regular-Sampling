@@ -32,7 +32,7 @@
  *********** MAIN MECHANISM (INTERFACE FOR PSRS (Parallel Sorting Regular Sampling)) **********
  **********************************************************************************************/
 
-void parl_hyperQuickSort(uint_64 *a, int processors, int n) {
+void parl_PSRS(uint_64 *a, int processors, int n) {
 
 	/* base cases - that a regular sort proved to be better */
 	if (processors <= 1 || n <= 1000) {

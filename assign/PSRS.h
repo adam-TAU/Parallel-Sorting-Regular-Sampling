@@ -35,7 +35,7 @@ void assert_other(int, char[]);
  * Now, we have got that the thread of rank <thread_num>, hold a sorted accumulated array of every number in the original array,
  * that is smaller than the <thread_num>-th pivot. So, all there is left to do, is to link every sorted accumulated array of each thread
  * To the thread behind and next to it, but that part of the algorithm is done throughout the running (Link means to just make their heads and tails touch). */
-void parl_hyperQuickSort(uint_64*, int, int);
+void parl_PSRS(uint_64*, int, int);
 
 
 /* The Parallel Region of the algorithm */

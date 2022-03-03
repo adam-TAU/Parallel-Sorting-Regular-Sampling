@@ -33,7 +33,7 @@ int main(int argv, char* args[]) {
 	/* sort + measure time */
 	struct timeval start, end;
 	gettimeofday(&start, NULL);
-	parl_hyperQuickSort(nums, processors, len);
+	parl_PSRS(nums, processors, len);
 	gettimeofday(&end, NULL);
 	double elapsed = (end.tv_sec - start.tv_sec)*1000000.0 + (end.tv_usec - start.tv_usec);
 
