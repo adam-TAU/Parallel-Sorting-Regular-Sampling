@@ -1,7 +1,7 @@
 # Parallel-Sorting-Regular-Sampling
 
 A Parallel Sorting By Regular Sampling algorithm, implemented using OpenMP. <br>
-The number of processors can variable.
+The number of processors is variable.
 To run the program, do the following
 
 ```
