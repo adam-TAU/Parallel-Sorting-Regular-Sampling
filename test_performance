@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # compilation of the algorithms
-gcc -std=c11 -fopenmp -O3 -c assign/hyperquicksort_parallel.c -o quick.o -lm
+gcc -std=c11 -fopenmp -O3 -c assign/PSRS.c -o psrs.o -lm
 gcc -std=c11 -O3 -c assign/main.c -o main.o
-gcc -O3 -fopenmp main.o quick.o -o parsort -lm
+gcc -O3 -fopenmp main.o psrs.o -o parsort -lm
 
 gcc -std=c11 -O3 sort.c -o sort
 
@@ -19,5 +19,5 @@ echo  -n "Parallel Algorithm: "
 # cleaning
 rm sort
 rm parsort
-rm quick.o
+rm psrs.o
 rm main.o
