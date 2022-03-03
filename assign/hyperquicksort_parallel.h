@@ -33,15 +33,6 @@ void swap(uint_64 *, uint_64 *);
 
 
 
-
-/* declarations of mergesort's (auxiliary) funcs */
-void mergeSort(uint_64*, int, int);
-void merge(uint_64*, int, int, int);
-
-
-
-
-
 /* general purpose auxiliary functions */
 int BinarySearch(uint_64* array, uint_64 pivot, int left, int right);
 void assert_other(int, char[]);
