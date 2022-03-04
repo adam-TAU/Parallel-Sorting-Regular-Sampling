@@ -2,10 +2,12 @@
 #!/bin/bash
 
 # assembling and linking
-gcc -std=c11 -fopenmp -O3 -c PSRS.c -o psrs.o -lm
-gcc -std=c11 -O3 -c main.c -o main.o 
-gcc -O3 -fopenmp main.o psrs.o -o parsort -lm
+g++ -g -lstdc++ -fopenmp -O3 -c PSRS.c -o psrs.o -lm
+g++ -g -lstdc++ -O3 -c main.cpp -o main.o 
+g++ -g -lstdc++ -O3 -c mergeKarrays.cpp -o merge.o
+g++ -g -lstdc++ -O3 -fopenmp main.o psrs.o merge.o -o parsort -lm
 
 # clean up
 rm psrs.o
 rm main.o
+rm merge.o

@@ -24,7 +24,8 @@ int main(int argv, char* args[]) {
 	int len = 0;
 
 	/* parse arguments */
-	assert_other(argv != 3, "Incorrect amount of arguments!"); 
+	char* str = (char*)"Incorrect amount of arguments!";
+	assert_other(argv != 3, str); 
 	processors = atoi(args[1]);
 	FILE* ifp = fopen(args[2], "r");
 	parse_args(ifp, &len);
@@ -43,7 +44,7 @@ int main(int argv, char* args[]) {
 
 
 	/* coherently finish the program */
-	free_program(nums);
+	free_program();
 }
 
 
@@ -61,8 +62,9 @@ static void parse_args(FILE* ifp, int* length) {
 	while (EOF != fscanf(ifp, "%lu", &num)) {
 		(*length)++;
 	}
-
-	assert_other((*length) == 0, "Empty input file");
+	
+	char* str = (char*)"Empty input file";
+	assert_other((*length) == 0, str);
 	nums = (uint_64*)calloc((*length), sizeof(uint_64));
 	
 	/* populate the array of nums */
@@ -90,8 +92,9 @@ static void printarr(uint_64 numbers[], int length) {
 
 
 /* freeing all resources used by the program (when done with sorting) */
-static void free_program(uint_64 nums[]) {
+static void free_program() {
 	if (nums != NULL) {
+		printf("got it\n");
 		free(nums);
 	}
 }
@@ -100,9 +103,9 @@ static void free_program(uint_64 nums[]) {
 
 
 /* personally preferred assert func */
-void assert_other(int cond, char stderr[]) {
+void assert_other(int cond, char strerr[]) {
 	if (cond) {
-		printf("%s\n", stderr);
+		printf("%s\n", strerr);
 		exit(1);
 	}
 }

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "PSRS.h"
+#include "mergeKarrays.h"
 
 
 /**********************************************************************************************
@@ -150,7 +151,7 @@ void Parallel_Region (uint_64* original_array,
 		Accumulate_Partitions(&cummulative_partition, original_array, thread_num, partition_borders, cummulative_partition_locations[thread_num], local_parts_array, processors);
 
 		/* Sort the accumulated partition, and free the memory that this thread allocated */
-		quickSort(cummulative_partition, 0, cummulative_partition_size - 1);
+		// quickSort(cummulative_partition, 0, cummulative_partition_size - 1);
 		#pragma omp barrier
 		free(local_part); // free local array
 	}
@@ -354,10 +355,14 @@ void Accumulate_Partitions(uint_64** cummulative_partition,
 		uint_64** local_parts_array,
 		int parts) 
 {
+	uint_64** partitions = (uint_64**) malloc (parts * sizeof(uint_64*));
+	int* partition_sizes = (int*) malloc (parts * sizeof(int));
+	int amount = 0, j = 0;
+	
 	/* Extract the partitions in each thread, that are supposed to be handled by this thread (so all of the <thread_num> partitions, of all threads, shall be merged into one, here */
 	*cummulative_partition = original_array + start_copy;
 
-	for(int i = 0, j = 0; i < parts; i++) {
+	for(int i = 0; i < parts; i++) {
 		int bottom, top, thread_partition_size, offset;
 
 		// get the i-th thread's, <thread_num> partition borders. While the 0-th partition is starts at index 0.
@@ -368,10 +373,17 @@ void Accumulate_Partitions(uint_64** cummulative_partition,
 
 		// copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
 		if(thread_partition_size > 0) {
-			memcpy(*cummulative_partition+j, ((local_parts_array)[i] + bottom), thread_partition_size * sizeof(uint_64));
+			memcpy(partitions[i], ((local_parts_array)[i] + bottom), thread_partition_size * sizeof(uint_64));
 			j += thread_partition_size;
+			
+			amount++;
+			partition_sizes[i] = thread_partition_size;
 		}
 	}
+	
+	
+	uint_64* result = mergeKArrays(partitions, amount, partition_sizes);
+	memcpy(original_array + start_copy, result,  j * sizeof(uint_64));
 }
 
 
