@@ -5,7 +5,9 @@
 
 /* making life easier since I compile with C11, and it doesn't know uint64_t, 
  * yet "unsigned long" is quite a pain to maintain */ 
-typedef unsigned long uint_64;
+typedef unsigned long long uint_64;
+
+
 
 
 /* general purpose auxiliary functions */
@@ -143,13 +145,12 @@ void Extract_Partition_Borders(uint_64* local_part_array,
 
 /* Gathers all of the partitions of all of the threads, that correlate to the partition that this thread was destined to manage. 
  * It then, copies that array into the place of the original array, into the fitting place (relative to the lower partitions' size that they occupy) */
-void Accumulate_Partitions(uint_64** cummulative_partition,
-						   uint_64* original_array, 
-						   int thread_num,
-						   int* partition_borders,
-						   int start_copy,
-						   uint_64** local_parts_array,
-						   int parts);
+void Accumulate_Partitions(int cummulative_partition_size,
+		int thread_num,
+		int* partition_borders,
+		uint_64* start_copy,
+		uint_64** local_parts_array,
+		int parts);
 						   
 						   
 /* This function gets a thread_num id, and then sums up all of the sizes of the <thread_num>-th partitions, in each thread's local array

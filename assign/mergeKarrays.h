@@ -4,10 +4,10 @@
 
 
 
-typedef unsigned long uint_64;
+typedef unsigned long long uint_64;
 
 
-uint_64* mergeKArrays(uint_64** partitions, int parts, int* sizes);
+void mergeKArrays(uint_64** partitions, int parts, int* sizes, uint_64* start_copy);
 
 
 /* 

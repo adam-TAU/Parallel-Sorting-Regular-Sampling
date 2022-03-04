@@ -10,7 +10,7 @@
 #include <bits/stdc++.h>
 #include <stdio.h>
 #include<iostream>
-typedef unsigned long uint_64;
+typedef unsigned long long uint_64;
 
  
  using namespace std;
@@ -23,15 +23,15 @@ typedef pair<uint_64, pair<int, int> > ppi;
 // argument and all arrays are assumed to be
 // sorted. It merges them together and prints
 // the final sorted output.
-uint_64* mergeKArrays(uint_64** partitions, int parts, int* sizes)
+void mergeKArrays(uint_64** partitions, int parts, int* sizes, uint_64* start_copy)
 {
 
 
 	/* build arr (vector<vector<uint_64> > arr) */
 	vector<vector<uint_64> > arr;
 	
-	for (int i=0; i < parts; i++) {
-		vector<uint_64> v(partitions[i], partitions[i] + sizeof partitions[i] / sizeof partitions[i][0]);
+	for (int i = 0; i < parts; i++) {
+		vector<uint_64> v(partitions[i], partitions[i] + sizes[i]);
 		arr.push_back(v);
 	}
 	
@@ -65,6 +65,8 @@ uint_64* mergeKArrays(uint_64** partitions, int parts, int* sizes)
         if (j + 1 < arr[i].size())
             pq.push({ arr[i][j + 1], { i, j + 1 } });
     }
+    
+    
+    copy(output.begin(), output.end(), start_copy);
  
-	return output.data();
 }

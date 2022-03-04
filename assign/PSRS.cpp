@@ -12,6 +12,9 @@
  * dear source reader, the documentation of the functions is in the PSRS.h header file. 
  */ 
 
+#include <bits/stdc++.h>
+#include <vector>
+#include<iostream>
 
 #include <omp.h>
 #include <stdio.h>
@@ -20,6 +23,7 @@
 #include <math.h>
 #include "PSRS.h"
 #include "mergeKarrays.h"
+
 
 
 /**********************************************************************************************
@@ -148,7 +152,7 @@ void Parallel_Region (uint_64* original_array,
 		cummulative_partition_size = (thread_num == (processors-1)) ? (original_array_size - cummulative_partition_locations[thread_num]) : (cummulative_partition_sizes[thread_num]);    
 
 		/* accumulate the <thread_num>-th partition of each part, and then gather them into their place in the original array */
-		Accumulate_Partitions(&cummulative_partition, original_array, thread_num, partition_borders, cummulative_partition_locations[thread_num], local_parts_array, processors);
+		Accumulate_Partitions(cummulative_partition_size, thread_num, partition_borders, original_array + cummulative_partition_locations[thread_num], local_parts_array, processors);
 
 		/* Sort the accumulated partition, and free the memory that this thread allocated */
 		// quickSort(cummulative_partition, 0, cummulative_partition_size - 1);
@@ -347,20 +351,18 @@ void Extract_Partition_Borders(uint_64* local_part_array,
  ********************************** LET THE THREAD GATHER THE PARTITIONS HE MANAGES, FROM OTHER THREADs' LOCAL PARTS ************************************************
  ********************************************************************************************************************************************************************/
 
-void Accumulate_Partitions(uint_64** cummulative_partition,
-		uint_64* original_array, 
+void Accumulate_Partitions(int cummulative_partition_size,
 		int thread_num,
 		int* partition_borders,
-		int start_copy,
+		uint_64* start_copy,
 		uint_64** local_parts_array,
 		int parts) 
 {
 	uint_64** partitions = (uint_64**) malloc (parts * sizeof(uint_64*));
 	int* partition_sizes = (int*) malloc (parts * sizeof(int));
-	int amount = 0, j = 0;
+	int amount = 0; // the amount of threads that their <thread_num>-th partition isn't empty
 	
 	/* Extract the partitions in each thread, that are supposed to be handled by this thread (so all of the <thread_num> partitions, of all threads, shall be merged into one, here */
-	*cummulative_partition = original_array + start_copy;
 
 	for(int i = 0; i < parts; i++) {
 		int bottom, top, thread_partition_size, offset;
@@ -373,17 +375,30 @@ void Accumulate_Partitions(uint_64** cummulative_partition,
 
 		// copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
 		if(thread_partition_size > 0) {
+			partitions[i] = (uint_64*) malloc(thread_partition_size * sizeof(uint_64));
 			memcpy(partitions[i], ((local_parts_array)[i] + bottom), thread_partition_size * sizeof(uint_64));
-			j += thread_partition_size;
-			
 			amount++;
-			partition_sizes[i] = thread_partition_size;
+			
 		}
+		
+		// add the size of the current partition into our array that logs the <thread_num>-th partition's size of each thread
+		partition_sizes[i] = thread_partition_size;
 	}
 	
+	mergeKArrays(partitions, amount, partition_sizes, start_copy); // merge the sorted arrays into one sorted unified vector, and insert its contents into the location in the array that we specified
+
 	
-	uint_64* result = mergeKArrays(partitions, amount, partition_sizes);
-	memcpy(original_array + start_copy, result,  j * sizeof(uint_64));
+	if (partition_sizes != NULL) free(partition_sizes);
+	
+	if (partitions != NULL) {
+		for (int i = 0; i < amount; i++) {
+			if (partitions[i] != NULL) {
+				free(partitions[i]);
+			}	
+		}
+		free(partitions);
+	}
+	
 }
 
 

@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # assembling and linking
-g++ -g -lstdc++ -fopenmp -O3 -c PSRS.c -o psrs.o -lm
+g++ -g -lstdc++ -fopenmp -O3 -c PSRS.cpp -o psrs.o -lm
 g++ -g -lstdc++ -O3 -c main.cpp -o main.o 
 g++ -g -lstdc++ -O3 -c mergeKarrays.cpp -o merge.o
 g++ -g -lstdc++ -O3 -fopenmp main.o psrs.o merge.o -o parsort -lm

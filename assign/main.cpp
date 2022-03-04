@@ -63,9 +63,12 @@ static void parse_args(FILE* ifp, int* length) {
 		(*length)++;
 	}
 	
+	
 	char* str = (char*)"Empty input file";
 	assert_other((*length) == 0, str);
 	nums = (uint_64*)calloc((*length), sizeof(uint_64));
+	
+	
 	
 	/* populate the array of nums */
 	rewind(ifp);
@@ -94,7 +97,6 @@ static void printarr(uint_64 numbers[], int length) {
 /* freeing all resources used by the program (when done with sorting) */
 static void free_program() {
 	if (nums != NULL) {
-		printf("got it\n");
 		free(nums);
 	}
 }
