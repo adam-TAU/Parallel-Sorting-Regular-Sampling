@@ -27,8 +27,6 @@ void mergeKArrays(int* partition_borders, uint_64** local_parts_array, int parts
 {
 
 	/* build arr (vector<vector<uint_64> > arr) */
-
-
 	vector<vector<uint_64> > arr;
 
 
@@ -40,14 +38,12 @@ void mergeKArrays(int* partition_borders, uint_64** local_parts_array, int parts
 		offset = i * (parts + 1) + thread_num; 
 		bottom = partition_borders[offset];
 		top = partition_borders[offset+1];
-		thread_partition_size = (top - bottom);
+		thread_partition_size = top - bottom;
 
 		// copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
 		if(thread_partition_size > 0) {
-			printf("here1\n");
-			vector<uint_64> tmp(local_parts_array[i] + bottom, local_parts_array[i] + thread_partition_size);
+			vector<uint_64> tmp(local_parts_array[i] + bottom, local_parts_array[i] + top);
 			arr.push_back(tmp);
-			printf("here2\n");
 		}
 		
 	}

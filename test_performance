@@ -1,9 +1,10 @@
-#!/bin/bash
+\#!/bin/bash
 
 # compilation of the algorithms
-gcc -std=c11 -fopenmp -O3 -c assign/PSRS.c -o psrs.o -lm
-gcc -std=c11 -O3 -c assign/main.c -o main.o
-gcc -O3 -fopenmp main.o psrs.o -o parsort -lm
+g++ -g -lstdc++ -fopenmp -O3 -c assign/PSRS.cpp -o psrs.o -lm
+g++ -g -lstdc++ -O3 -c assign/main.cpp -o main.o
+g++ -g -lstdc++ -O3 -c assign/mergeKarrays.cpp -o merge.o
+g++ -g -lstdc++ -O3 -fopenmp main.o psrs.o merge.o -o parsort -lm
 
 gcc -std=c11 -O3 sort.c -o sort
 
@@ -21,3 +22,4 @@ rm sort
 rm parsort
 rm psrs.o
 rm main.o
+rm merge.o
