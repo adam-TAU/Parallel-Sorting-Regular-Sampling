@@ -358,46 +358,10 @@ void Accumulate_Partitions(int cummulative_partition_size,
 		uint_64** local_parts_array,
 		int parts) 
 {
-	uint_64** partitions = (uint_64**) malloc (parts * sizeof(uint_64*));
-	int* partition_sizes = (int*) malloc (parts * sizeof(int));
-	int amount = 0; // the amount of threads that their <thread_num>-th partition isn't empty
-	
-	/* Extract the partitions in each thread, that are supposed to be handled by this thread (so all of the <thread_num> partitions, of all threads, shall be merged into one, here */
-
-	for(int i = 0; i < parts; i++) {
-		int bottom, top, thread_partition_size, offset;
-
-		// get the i-th thread's, <thread_num> partition borders. While the 0-th partition is starts at index 0.
-		offset = i * (parts + 1) + thread_num; 
-		bottom = partition_borders[offset];
-		top = partition_borders[offset+1];
-		thread_partition_size = (top - bottom);
-
-		// copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
-		if(thread_partition_size > 0) {
-			partitions[i] = (uint_64*) malloc(thread_partition_size * sizeof(uint_64));
-			memcpy(partitions[i], ((local_parts_array)[i] + bottom), thread_partition_size * sizeof(uint_64));
-			amount++;
-			
-		}
-		
-		// add the size of the current partition into our array that logs the <thread_num>-th partition's size of each thread
-		partition_sizes[i] = thread_partition_size;
-	}
-	
-	mergeKArrays(partitions, amount, partition_sizes, start_copy); // merge the sorted arrays into one sorted unified vector, and insert its contents into the location in the array that we specified
 
 	
-	if (partition_sizes != NULL) free(partition_sizes);
-	
-	if (partitions != NULL) {
-		for (int i = 0; i < amount; i++) {
-			if (partitions[i] != NULL) {
-				free(partitions[i]);
-			}	
-		}
-		free(partitions);
-	}
+	mergeKArrays(partition_borders, local_parts_array, parts, start_copy, thread_num); // merge the sorted arrays into one sorted unified vector, and insert its contents into the location in the array that we specified
+
 	
 }
 

@@ -23,18 +23,35 @@ typedef pair<uint_64, pair<int, int> > ppi;
 // argument and all arrays are assumed to be
 // sorted. It merges them together and prints
 // the final sorted output.
-void mergeKArrays(uint_64** partitions, int parts, int* sizes, uint_64* start_copy)
+void mergeKArrays(int* partition_borders, uint_64** local_parts_array, int parts, uint_64* start_copy, int thread_num)
 {
 
-
 	/* build arr (vector<vector<uint_64> > arr) */
+
+
 	vector<vector<uint_64> > arr;
-	
-	for (int i = 0; i < parts; i++) {
-		vector<uint_64> v(partitions[i], partitions[i] + sizes[i]);
-		arr.push_back(v);
+
+
+	/* Extract the partitions in each thread, that are supposed to be handled by this thread (so all of the <thread_num> partitions, of all threads, shall be merged into one, here */
+	for(int i = 0; i < parts; i++) {
+		int bottom, top, thread_partition_size, offset;
+
+		// get the i-th thread's, <thread_num> partition borders. While the 0-th partition is starts at index 0.
+		offset = i * (parts + 1) + thread_num; 
+		bottom = partition_borders[offset];
+		top = partition_borders[offset+1];
+		thread_partition_size = (top - bottom);
+
+		// copy the partition (using its borders - relative to the i-th thread's local array) into the final position of the cummulative <thread_num> partition (0th partition starts at index 0)
+		if(thread_partition_size > 0) {
+			printf("here1\n");
+			vector<uint_64> tmp(local_parts_array[i] + bottom, local_parts_array[i] + thread_partition_size);
+			arr.push_back(tmp);
+			printf("here2\n");
+		}
+		
 	}
-	
+
 
 
     vector<uint_64> output;
