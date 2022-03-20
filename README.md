@@ -10,4 +10,4 @@ build
 ./parsort <processors|hardware_threads> <filename_to_sort>
 ```
 
-Note that the program accepts unsigned long integers only. 
+Note that the program accepts unsigned long integers only (I.E. 64 bit numbers) 
